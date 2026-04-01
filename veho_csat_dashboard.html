@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veho CSAT Analysis — Case Study Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0c0f14;
+  --surface: #151920;
+  --surface-2: #1c2028;
+  --border: #2a2f3a;
+  --text: #e8eaed;
+  --text-muted: #8b8f98;
+  --accent: #ff6b35;
+  --accent-glow: rgba(255, 107, 53, 0.15);
+  --green: #34d399;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+  --cyan: #22d3ee;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Header */
+.header {
+  padding: 32px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,107,53,0.04) 0%, transparent 100%);
+}
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.header h1 span { color: var(--accent); }
+.header .subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+.header .meta {
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.header .meta strong { color: var(--text); }
+
+/* Navigation */
+.nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 48px;
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 14px 24px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.nav button:hover { color: var(--text); }
+.nav button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Sections */
+.section { display: none; padding: 32px 48px; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* KPI Cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+}
+.kpi.orange::before { background: var(--accent); }
+.kpi.green::before { background: var(--green); }
+.kpi.red::before { background: var(--red); }
+.kpi.blue::before { background: var(--blue); }
+.kpi.purple::before { background: var(--purple); }
+.kpi.yellow::before { background: var(--yellow); }
+.kpi .label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.kpi .value {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+.kpi .sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Chart containers */
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.chart-card.full { grid-column: 1 / -1; }
+.chart-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.chart-card .chart-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.chart-wrap { position: relative; height: 280px; }
+.chart-wrap.tall { height: 340px; }
+
+/* Tables */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  background: var(--surface-2);
+  padding: 10px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover { background: rgba(255,107,53,0.03); }
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge.good { background: rgba(52,211,153,0.15); color: var(--green); }
+.badge.warn { background: rgba(251,191,36,0.15); color: var(--yellow); }
+.badge.bad { background: rgba(248,113,113,0.15); color: var(--red); }
+
+/* Insight callouts */
+.insight {
+  background: var(--accent-glow);
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px;
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+  font-size: 14px;
+}
+.insight strong { color: var(--accent); }
+
+/* Comment cards */
+.comment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.comment-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 13px;
+}
+.comment-card .rating {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.comment-card .market-tag {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Section titles */
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.section-desc {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+/* Qualitative section */
+.qual-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.qual-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.qual-card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.qual-card ul {
+  list-style: none;
+  padding: 0;
+}
+.qual-card li {
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  padding-left: 16px;
+  position: relative;
+}
+.qual-card li:last-child { border-bottom: none; }
+.qual-card li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+.qual-card.full { grid-column: 1 / -1; }
+
+@media (max-width: 900px) {
+  .chart-grid, .qual-grid, .comment-grid { grid-template-columns: 1fr; }
+  .header, .section { padding: 20px 24px; }
+  .nav { padding: 0 24px; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1><span>veho</span> CSAT Analysis</h1>
+    <div class="subtitle">Senior Full Stack Data Analyst — Case Study Presentation</div>
+  </div>
+  <div class="meta">
+    <div><strong>Dataset:</strong> 76,497 deliveries</div>
+    <div><strong>Period:</strong> Mar 19 – Apr 18, 2021 (31 days)</div>
+    <div><strong>Markets:</strong> Denver · Baltimore · Dallas · Chicago · Philadelphia</div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" data-tab="overview">Overview</button>
+  <button data-tab="markets">Markets</button>
+  <button data-tab="trends">Trends</button>
+  <button data-tab="drivers">Drivers</button>
+  <button data-tab="operations">Operations</button>
+  <button data-tab="qualitative">Qualitative Analysis</button>
+</div>
+
+<!-- OVERVIEW TAB -->
+<div class="section active" id="overview">
+  <div class="kpi-grid">
+    <div class="kpi orange">
+      <div class="label">Overall CSAT</div>
+      <div class="value">4.836</div>
+      <div class="sub">Target: 4.9 · Gap: −0.064</div>
+    </div>
+    <div class="kpi green">
+      <div class="label">5-Star Rate</div>
+      <div class="value">93.4%</div>
+      <div class="sub">71,307 of 76,325 rated</div>
+    </div>
+    <div class="kpi red">
+      <div class="label">Below 4 Stars</div>
+      <div class="value">4.4%</div>
+      <div class="sub">3,329 packages</div>
+    </div>
+    <div class="kpi blue">
+      <div class="label">Misdelivery Rate</div>
+      <div class="value">0.11%</div>
+      <div class="sub">81 packages — avg CSAT: 1.18</div>
+    </div>
+    <div class="kpi purple">
+      <div class="label">Unique Drivers</div>
+      <div class="value">1,940</div>
+      <div class="sub">1,413 with 10+ deliveries</div>
+    </div>
+    <div class="kpi yellow">
+      <div class="label">Avg Route Size</div>
+      <div class="value">6.2</div>
+      <div class="sub">packages per route (12,280 routes)</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>Key Finding:</strong> Overall CSAT of 4.836 falls below the 4.9 target. The distribution is heavily skewed toward 5 stars (93.4%), meaning the gap is driven by a relatively small tail of poor experiences — specifically 1-star ratings (2.3%) which act as severe outliers pulling the mean down. Addressing the bottom ~4% of deliveries is the highest-leverage path to reaching 4.9.
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>CSAT Rating Distribution</h3>
+      <div class="chart-subtitle">Highly left-skewed — 93.4% of all ratings are 5 stars</div>
+      <div class="chart-wrap"><canvas id="distChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>CSAT by Market</h3>
+      <div class="chart-subtitle">Dallas leads at 4.864 · Philadelphia trails at 4.818</div>
+      <div class="chart-wrap"><canvas id="marketChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>Data Quality Note:</strong> The CSAT field required significant cleaning — ratings were mixed with free-text comments, emojis, and annotations (e.g., "5 thank you!", "4+", "(4) almost great 😊"). A regex-based parser extracted numeric ratings for 99.8% of records (76,325 of 76,497). The ~170 unparsed rows were predominantly emoji-only or instruction text misrouted into the CSAT field.
+  </div>
+</div>
+
+<!-- MARKETS TAB -->
+<div class="section" id="markets">
+  <h2 class="section-title">Market-Level Breakdown</h2>
+  <p class="section-desc">Performance across 5 active metro areas. No market currently meets the 4.9 target.</p>
+
+  <div class="table-wrap" style="margin-bottom: 24px;">
+    <table>
+      <thead>
+        <tr><th>Market</th><th>Deliveries</th><th>Mean CSAT</th><th>5★ Rate</th><th>Below 4★</th><th>Misdelivery Rate</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Dallas</strong></td><td class="mono">9,790</td><td class="mono">4.864</td><td class="mono">94.6%</td><td class="mono">3.6%</td><td class="mono">0.09%</td><td><span class="badge warn">Closest to target</span></td></tr>
+        <tr><td><strong>Denver</strong></td><td class="mono">24,400</td><td class="mono">4.843</td><td class="mono">93.9%</td><td class="mono">4.2%</td><td class="mono">0.07%</td><td><span class="badge warn">Largest market</span></td></tr>
+        <tr><td><strong>Chicago</strong></td><td class="mono">9,763</td><td class="mono">4.841</td><td class="mono">93.8%</td><td class="mono">4.4%</td><td class="mono">0.10%</td><td><span class="badge warn">Mid-tier</span></td></tr>
+        <tr><td><strong>Baltimore</strong></td><td class="mono">15,010</td><td class="mono">4.824</td><td class="mono">92.4%</td><td class="mono">4.5%</td><td class="mono">0.14%</td><td><span class="badge bad">Highest misdelivery</span></td></tr>
+        <tr><td><strong>Philadelphia</strong></td><td class="mono">17,362</td><td class="mono">4.818</td><td class="mono">92.7%</td><td class="mono">4.8%</td><td class="mono">0.13%</td><td><span class="badge bad">Lowest CSAT</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card full">
+      <h3>CSAT Trend by Market & Week</h3>
+      <div class="chart-subtitle">All markets trend upward from Week 11 → 15, suggesting improved operational maturity</div>
+      <div class="chart-wrap tall"><canvas id="marketWeekChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>Market Insight:</strong> Philadelphia and Baltimore consistently underperform, with the highest rates of sub-4-star ratings (4.8% and 4.5% respectively). These two markets also have the highest misdelivery rates. There's a ~0.046 CSAT point spread between the best (Dallas) and worst (Philadelphia) markets — small in absolute terms but significant given the tight 4.9 target.
+  </div>
+</div>
+
+<!-- TRENDS TAB -->
+<div class="section" id="trends">
+  <h2 class="section-title">Temporal Trends</h2>
+  <p class="section-desc">Week-over-week, day-of-week, and delivery hour patterns.</p>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>CSAT by Week</h3>
+      <div class="chart-subtitle">Steady improvement from 4.751 (Wk 11) → 4.851 (Wk 14-15)</div>
+      <div class="chart-wrap"><canvas id="weekChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>CSAT by Day of Week</h3>
+      <div class="chart-subtitle">Thursday peaks at 4.856 · Saturday dips to 4.826</div>
+      <div class="chart-wrap"><canvas id="dowChart"></canvas></div>
+    </div>
+    <div class="chart-card full">
+      <h3>CSAT by Delivery Hour (UTC)</h3>
+      <div class="chart-subtitle">Late-night deliveries (10PM+) show dramatic CSAT decline — a clear operational risk zone</div>
+      <div class="chart-wrap tall"><canvas id="hourChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>Critical Time Finding:</strong> Deliveries completed after 10 PM UTC show CSAT dropping sharply — from ~4.87 during peak hours (1-4 PM) to 4.47 at midnight, 4.02 at 1 AM, and as low as 2.15 at 4 AM. Late deliveries are a top driver of poor ratings and likely reflect route overloads, driver fatigue, or capacity planning issues.
+  </div>
+</div>
+
+<!-- DRIVERS TAB -->
+<div class="section" id="drivers">
+  <h2 class="section-title">Driver Performance</h2>
+  <p class="section-desc">Analysis of 1,940 unique drivers. 1,413 with 10+ deliveries considered "qualified" for analysis.</p>
+
+  <div class="kpi-grid">
+    <div class="kpi orange">
+      <div class="label">Mean of Driver Means</div>
+      <div class="value">4.835</div>
+      <div class="sub">σ = 0.194</div>
+    </div>
+    <div class="kpi red">
+      <div class="label">Drivers Below 4.5</div>
+      <div class="value">70</div>
+      <div class="sub">5.0% of qualified drivers</div>
+    </div>
+    <div class="kpi red">
+      <div class="label">Drivers Below 4.0</div>
+      <div class="value">8</div>
+      <div class="sub">Highest-priority intervention targets</div>
+    </div>
+    <div class="kpi green">
+      <div class="label">Routes Below 4.5 CSAT</div>
+      <div class="value">1,435</div>
+      <div class="sub">11.7% of 12,280 total routes</div>
+    </div>
+  </div>
+
+  <h3 style="margin: 24px 0 12px;">Bottom 10 Drivers (min 10 deliveries)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Driver ID</th><th>Market</th><th>Deliveries</th><th>Mean CSAT</th><th>5★ Rate</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td class="mono">GfX39BE...</td><td>Denver</td><td class="mono">10</td><td class="mono" style="color:var(--red)">3.20</td><td class="mono">40.0%</td></tr>
+        <tr><td>2</td><td class="mono">795nQn4...</td><td>Philadelphia</td><td class="mono">31</td><td class="mono" style="color:var(--red)">3.26</td><td class="mono">45.2%</td></tr>
+        <tr><td>3</td><td class="mono">J3a5JjE...</td><td>Baltimore</td><td class="mono">15</td><td class="mono" style="color:var(--red)">3.27</td><td class="mono">46.7%</td></tr>
+        <tr><td>4</td><td class="mono">pDFy4ZT...</td><td>Dallas</td><td class="mono">12</td><td class="mono" style="color:var(--red)">3.58</td><td class="mono">58.3%</td></tr>
+        <tr><td>5</td><td class="mono">DmKZ4xD...</td><td>Baltimore</td><td class="mono">14</td><td class="mono" style="color:var(--red)">3.71</td><td class="mono">64.3%</td></tr>
+        <tr><td>6</td><td class="mono">YPcj9Mj...</td><td>Denver</td><td class="mono">27</td><td class="mono" style="color:var(--red)">3.78</td><td class="mono">59.3%</td></tr>
+        <tr><td>7</td><td class="mono">K4gs9gN...</td><td>Denver</td><td class="mono">36</td><td class="mono" style="color:var(--yellow)">3.89</td><td class="mono">66.7%</td></tr>
+        <tr><td>8</td><td class="mono">k9hguh7...</td><td>Chicago</td><td class="mono">11</td><td class="mono" style="color:var(--yellow)">3.91</td><td class="mono">63.6%</td></tr>
+        <tr><td>9</td><td class="mono">3jYuJon...</td><td>Baltimore</td><td class="mono">22</td><td class="mono" style="color:var(--yellow)">4.00</td><td class="mono">72.7%</td></tr>
+        <tr><td>10</td><td class="mono">AJgfy5t...</td><td>Chicago</td><td class="mono">15</td><td class="mono" style="color:var(--yellow)">4.00</td><td class="mono">60.0%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight">
+    <strong>Driver Insight:</strong> The bottom 8 drivers (below 4.0 CSAT) account for ~178 deliveries. While small in absolute numbers, each low-rated delivery has outsized impact on the mean given the 4.9 target. A targeted driver coaching/intervention program for the bottom 5% of performers could meaningfully move the needle. Note: driver #2 (Philadelphia) has 31 deliveries at 3.26 CSAT — this is a high-volume, high-impact outlier.
+  </div>
+</div>
+
+<!-- OPERATIONS TAB -->
+<div class="section" id="operations">
+  <h2 class="section-title">Operational Deep-Dive</h2>
+  <p class="section-desc">Delivery duration, instructions adherence, misdelivery impact, and customer voice.</p>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Delivery Duration vs. CSAT</h3>
+      <div class="chart-subtitle">Longer routes correlate with lower satisfaction</div>
+      <div class="chart-wrap"><canvas id="durationChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Instructions Impact</h3>
+      <div class="chart-subtitle">Packages with delivery instructions get lower CSAT</div>
+      <div class="chart-wrap"><canvas id="instrChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>Instructions Paradox:</strong> Packages WITH delivery instructions average 4.751 CSAT vs. 4.885 for those without — a 0.134 gap. This doesn't mean instructions cause bad ratings. Instead, customers who leave instructions have higher expectations and more complex delivery situations (apartments, gate codes, specific placement). Failure to follow these instructions triggers disproportionate dissatisfaction. This is the #1 addressable driver of low CSAT.
+  </div>
+
+  <h3 style="margin: 24px 0 12px;">Voice of the Customer — Low CSAT Comments</h3>
+  <p class="section-desc">Recurring themes from 1-3 star ratings with text feedback:</p>
+
+  <div class="comment-grid">
+    <div class="comment-card">
+      <div class="rating" style="color:var(--red)">★ 1 · <span class="market-tag">Baltimore</span></div>
+      "Did not follow directions. I am not home and this was left in the open NOT in my blue recycled bin."
+    </div>
+    <div class="comment-card">
+      <div class="rating" style="color:var(--red)">★ 1 · <span class="market-tag">Philadelphia</span></div>
+      "The person who delivered was exceptionally rude, shouted expletives at my concierge."
+    </div>
+    <div class="comment-card">
+      <div class="rating" style="color:var(--red)">★ 1 · <span class="market-tag">Denver</span></div>
+      "Package was delivered to wrong address."
+    </div>
+    <div class="comment-card">
+      <div class="rating" style="color:var(--yellow)">★ 3 · <span class="market-tag">Denver</span></div>
+      "No doorbell notification again today."
+    </div>
+    <div class="comment-card">
+      <div class="rating" style="color:var(--yellow)">★ 2 · <span class="market-tag">Chicago</span></div>
+      "My package keeps getting delivered to the wrong door. There are 2 entry ways."
+    </div>
+    <div class="comment-card">
+      <div class="rating" style="color:var(--yellow)">★ 3 · <span class="market-tag">Baltimore</span></div>
+      "By the time it was delivered it was too late to make for tonight."
+    </div>
+    <div class="comment-card">
+      <div class="rating" style="color:var(--red)">★ 1 · <span class="market-tag">Baltimore</span></div>
+      "Should have gone inside as the directions stated. Now it'll be in the hot sun all day."
+    </div>
+    <div class="comment-card">
+      <div class="rating" style="color:var(--yellow)">★ 3 · <span class="market-tag">Dallas</span></div>
+      "Please do not block doorway in the future."
+    </div>
+  </div>
+
+  <div class="insight" style="margin-top: 24px;">
+    <strong>Root Cause Themes from Comments:</strong><br>
+    1. <strong>Instructions not followed</strong> — placement, gate codes, specific doors<br>
+    2. <strong>Wrong address / misdelivery</strong> — even when last_event says "delivered"<br>
+    3. <strong>Late delivery</strong> — perishable goods (meal kits) particularly sensitive to timing<br>
+    4. <strong>Driver behavior</strong> — rudeness, lack of notification<br>
+    5. <strong>Package condition</strong> — damaged, warm food, leaking
+  </div>
+</div>
+
+<!-- QUALITATIVE TAB -->
+<div class="section" id="qualitative">
+  <h2 class="section-title">Qualitative Analysis & Recommendations</h2>
+  <p class="section-desc">Strategic framework for diagnosing and improving CSAT across Veho's operations.</p>
+
+  <div class="qual-grid">
+    <div class="qual-card">
+      <h4>Why CSAT Matters to Veho</h4>
+      <ul>
+        <li>Veho's value prop is delivery as "brand extension" — CSAT is the direct measure of that promise</li>
+        <li>Brand clients (Sephora, Zara, Hello Fresh) select logistics partners based on customer experience metrics</li>
+        <li>Low CSAT = contract risk, churn, and competitive vulnerability vs. traditional carriers</li>
+        <li>Driver-partner marketplace quality: CSAT signals help match supply quality to brand demand</li>
+        <li>Perishable / high-value goods amplify consequences of bad delivery experiences</li>
+      </ul>
+    </div>
+
+    <div class="qual-card">
+      <h4>Questions About Current CSAT Methodology</h4>
+      <ul>
+        <li>What is the CSAT response rate? Are non-respondents randomly distributed or biased?</li>
+        <li>Is the 4.9 target a mean, median, or % at 5-stars?</li>
+        <li>When is the CSAT survey sent? Timing relative to delivery affects response</li>
+        <li>Does CSAT capture delivery experience vs. product experience (e.g. "food was cold")?</li>
+        <li>Are there incentives or prompts that bias toward 5-star ratings?</li>
+        <li>How is CSAT aggregated — by package, route, consumer, or market?</li>
+      </ul>
+    </div>
+
+    <div class="qual-card">
+      <h4>Root Cause Analysis Framework</h4>
+      <ul>
+        <li>Segment by market × week to identify localized dips vs. systemic trends</li>
+        <li>Correlate low CSAT with: delivery hour, route size, driver tenure, client type</li>
+        <li>Analyze misdelivery → CSAT pipeline (misdelivery = 1.18 avg CSAT)</li>
+        <li>NLP/keyword extraction on low-CSAT comments for thematic clustering</li>
+        <li>Instructions compliance rate — cross-reference instructions text with delivery photos</li>
+        <li>Compare driver CSAT variance to identify coaching vs. systemic issues</li>
+      </ul>
+    </div>
+
+    <div class="qual-card">
+      <h4>Additional Data Requests</h4>
+      <ul>
+        <li>CSAT response rate per package (to assess selection bias)</li>
+        <li>Driver tenure / experience level (new vs. veteran driver performance)</li>
+        <li>Delivery photos + geolocation accuracy data</li>
+        <li>Client-level SLAs and delivery windows</li>
+        <li>Weather data overlay (impacts perishable deliveries)</li>
+        <li>Route optimization / sequencing data (does order-in-route affect CSAT?)</li>
+        <li>Repeat consumer behavior (does CSAT predict retention?)</li>
+      </ul>
+    </div>
+
+    <div class="qual-card">
+      <h4>Hypotheses for Systematic Improvement</h4>
+      <ul>
+        <li><strong>Operational:</strong> Cap max route completion time; flag routes at risk of late delivery</li>
+        <li><strong>Operational:</strong> Enforce instructions compliance via delivery photo + GPS verification</li>
+        <li><strong>Product:</strong> Build real-time driver alerts for special instructions (apartment access, placement)</li>
+        <li><strong>Product:</strong> Improve consumer ETA accuracy to reduce "late" perception</li>
+        <li><strong>Marketplace:</strong> Driver scoring model — route low-risk deliveries to new drivers</li>
+        <li><strong>Marketplace:</strong> Performance-based incentives tied to CSAT thresholds</li>
+        <li><strong>Process:</strong> Weekly CSAT review cadence per market with ops leads</li>
+      </ul>
+    </div>
+
+    <div class="qual-card">
+      <h4>Cross-Functional Partners</h4>
+      <ul>
+        <li><strong>Live Operations:</strong> Real-time route monitoring, escalation protocols</li>
+        <li><strong>Marketplace / Supply:</strong> Driver quality programs, performance incentives</li>
+        <li><strong>Product / Engineering:</strong> Driver app UX for instructions, photo verification</li>
+        <li><strong>Data Science:</strong> Predictive models for at-risk deliveries</li>
+        <li><strong>Client Success:</strong> Align CSAT goals with brand-specific SLAs</li>
+        <li><strong>Expansion:</strong> Apply CSAT learnings to new market launches</li>
+      </ul>
+    </div>
+
+    <div class="qual-card full">
+      <h4>Recommended Course of Action — Priority Matrix</h4>
+      <ul>
+        <li><strong>🔴 Immediate (this week):</strong> Identify and coach/pause bottom 8 drivers below 4.0 CSAT. Review late-night delivery policies — consider hard cutoff times.</li>
+        <li><strong>🟡 Short-term (2-4 weeks):</strong> Build automated CSAT alert system per market. Implement instructions-compliance audit on low-CSAT routes. Launch driver-level CSAT dashboard.</li>
+        <li><strong>🟢 Medium-term (1-3 months):</strong> Develop predictive CSAT model (features: hour, route size, driver history, instructions presence). A/B test driver incentive structures tied to CSAT. Redesign CSAT survey to separate delivery experience from product experience.</li>
+        <li><strong>🔵 Strategic (3-6 months):</strong> Build instructions-compliance scoring via NLP + photo analysis. Integrate CSAT into driver marketplace ranking algorithm. Establish CSAT as a north-star metric with cross-functional OKRs.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+// Navigation
+document.querySelectorAll('.nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Chart defaults
+Chart.defaults.color = '#8b8f98';
+Chart.defaults.borderColor = '#2a2f3a';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 12;
+
+const accent = '#ff6b35';
+const green = '#34d399';
+const red = '#f87171';
+const blue = '#60a5fa';
+const purple = '#a78bfa';
+const yellow = '#fbbf24';
+const cyan = '#22d3ee';
+
+// 1. Distribution chart
+new Chart(document.getElementById('distChart'), {
+  type: 'bar',
+  data: {
+    labels: ['1 ★', '2 ★', '3 ★', '4 ★', '5 ★'],
+    datasets: [{
+      data: [1790, 596, 943, 1689, 71307],
+      backgroundColor: [red, '#fb923c', yellow, blue, green],
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => `${ctx.raw.toLocaleString()} packages (${(ctx.raw/76325*100).toFixed(1)}%)`
+        }
+      }
+    },
+    scales: {
+      y: { type: 'logarithmic', grid: { color: '#1c2028' }, title: { display: true, text: 'Count (log scale)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// 2. Market chart
+new Chart(document.getElementById('marketChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Dallas', 'Denver', 'Chicago', 'Baltimore', 'Philadelphia'],
+    datasets: [{
+      label: 'Mean CSAT',
+      data: [4.864, 4.843, 4.841, 4.824, 4.818],
+      backgroundColor: [green, blue, blue, yellow, red],
+      borderRadius: 6,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { min: 4.75, max: 4.9, grid: { color: '#1c2028' },
+        ticks: { callback: v => v.toFixed(2) }
+      },
+      y: { grid: { display: false } }
+    },
+    plugins: {
+      annotation: {
+        annotations: {
+          target: { type: 'line', xMin: 4.9, xMax: 4.9, borderColor: accent, borderDash: [5,5], borderWidth: 2 }
+        }
+      }
+    }
+  }
+});
+
+// 3. Market x Week trend
+new Chart(document.getElementById('marketWeekChart'), {
+  type: 'line',
+  data: {
+    labels: ['Week 11', 'Week 12', 'Week 13', 'Week 14', 'Week 15'],
+    datasets: [
+      { label: 'Denver', data: [4.726, 4.853, 4.830, 4.872, 4.863], borderColor: blue, backgroundColor: blue+'33', tension: 0.3, pointRadius: 4 },
+      { label: 'Baltimore', data: [4.792, 4.706, 4.828, 4.859, 4.878], borderColor: yellow, backgroundColor: yellow+'33', tension: 0.3, pointRadius: 4 },
+      { label: 'Dallas', data: [null, 4.869, 4.866, 4.876, 4.845], borderColor: green, backgroundColor: green+'33', tension: 0.3, pointRadius: 4 },
+      { label: 'Chicago', data: [4.100, 4.855, 4.831, 4.857, 4.821], borderColor: purple, backgroundColor: purple+'33', tension: 0.3, pointRadius: 4 },
+      { label: 'Philadelphia', data: [4.810, 4.813, 4.837, 4.799, 4.828], borderColor: red, backgroundColor: red+'33', tension: 0.3, pointRadius: 4 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: {
+      y: { min: 4.6, max: 4.95, grid: { color: '#1c2028' }, ticks: { callback: v => v.toFixed(2) } },
+      x: { grid: { color: '#1c2028' } }
+    }
+  }
+});
+
+// 4. Week trend
+new Chart(document.getElementById('weekChart'), {
+  type: 'line',
+  data: {
+    labels: ['Wk 11', 'Wk 12', 'Wk 13', 'Wk 14', 'Wk 15'],
+    datasets: [{
+      label: 'Mean CSAT',
+      data: [4.751, 4.821, 4.836, 4.851, 4.851],
+      borderColor: accent, backgroundColor: accent+'22',
+      fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: accent
+    },{
+      label: '5★ Rate %',
+      data: [90.4, 92.8, 93.4, 94.1, 93.9],
+      borderColor: green, backgroundColor: green+'22',
+      fill: false, tension: 0.3, pointRadius: 5, pointBackgroundColor: green,
+      yAxisID: 'y1'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: {
+      y: { min: 4.7, max: 4.9, grid: { color: '#1c2028' }, title: { display: true, text: 'Mean CSAT' } },
+      y1: { position: 'right', min: 88, max: 96, grid: { display: false }, title: { display: true, text: '5★ Rate %' } },
+      x: { grid: { color: '#1c2028' } }
+    }
+  }
+});
+
+// 5. Day of week
+new Chart(document.getElementById('dowChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [{
+      data: [4.846, 4.827, 4.831, 4.856, 4.830, 4.826, 4.833],
+      backgroundColor: [blue, blue, blue, green, blue, yellow, blue],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { min: 4.8, max: 4.87, grid: { color: '#1c2028' }, ticks: { callback: v => v.toFixed(3) } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// 6. Hour chart
+new Chart(document.getElementById('hourChart'), {
+  type: 'bar',
+  data: {
+    labels: ['12p','1p','2p','3p','4p','5p','6p','7p','8p','9p','10p','11p','12a','1a','2a','3a','4a','5a'],
+    datasets: [{
+      label: 'Mean CSAT',
+      data: [4.804, 4.873, 4.872, 4.875, 4.871, 4.849, 4.853, 4.838, 4.811, 4.788, 4.667, 4.549, 4.465, 4.015, 3.366, 3.853, 2.154, 2.000],
+      backgroundColor: function(ctx) {
+        const v = ctx.raw;
+        if (v >= 4.8) return green;
+        if (v >= 4.5) return yellow;
+        if (v >= 4.0) return '#fb923c';
+        return red;
+      },
+      borderRadius: 4, borderSkipped: false
+    },{
+      label: 'Volume',
+      data: [280,3114,7782,12047,13631,12131,8968,6577,4681,3043,1835,1072,649,329,131,34,13,4],
+      type: 'line',
+      borderColor: '#555',
+      pointRadius: 0,
+      borderWidth: 1,
+      yAxisID: 'y1'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: {
+      y: { min: 1.5, max: 5.0, grid: { color: '#1c2028' }, title: { display: true, text: 'Mean CSAT' } },
+      y1: { position: 'right', grid: { display: false }, title: { display: true, text: 'Delivery Volume' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// 7. Duration chart
+new Chart(document.getElementById('durationChart'), {
+  type: 'bar',
+  data: {
+    labels: ['1 ★', '2 ★', '3 ★', '4 ★', '5 ★'],
+    datasets: [{
+      label: 'Avg Duration (hrs)',
+      data: [2.82, 3.05, 2.78, 2.70, 2.29],
+      backgroundColor: [red, '#fb923c', yellow, blue, green],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { grid: { color: '#1c2028' }, title: { display: true, text: 'Avg Hours from Route Start' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// 8. Instructions chart
+new Chart(document.getElementById('instrChart'), {
+  type: 'bar',
+  data: {
+    labels: ['With Instructions', 'Without Instructions'],
+    datasets: [{
+      label: 'Mean CSAT',
+      data: [4.751, 4.885],
+      backgroundColor: [yellow, green],
+      borderRadius: 6, borderSkipped: false,
+      barThickness: 60
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { min: 4.6, max: 4.95, grid: { color: '#1c2028' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python veho_csat_analysis.py)",
+      "Bash(python3 veho_csat_analysis.py)",
+      "Bash(where py:*)",
+      "Bash(py --version)",
+      "Bash(py veho_csat_analysis.py)",
+      "Bash(py -m pip install scipy --quiet)",
+      "Bash(findstr /C:\"PHASE 3\" /C:\"Mean\" /C:\"Median\" /C:\"Std\" /C:\"Skewness\" /C:\"Insight\" /C:\"saved\" /C:\"star\" /C:\"Error\" /C:\"Traceback\" /C:\"1*\" /C:\"2*\" /C:\"3*\" /C:\"4*\" /C:\"5*\")",
+      "Bash(py -c ':*)"
+    ]
+  }
+}

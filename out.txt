@@ -1,0 +1,265 @@
+C:\Users\david.vasquez\Documents\personal\ofertas\veho_csat_analysis.py:1135: UserWarning: Tight layout not applied. The bottom and top margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+C:\Users\david.vasquez\Documents\personal\ofertas\veho_csat_analysis.py:1718: UserWarning: Tight layout not applied. The bottom and top margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+C:\Users\david.vasquez\Documents\personal\ofertas\veho_csat_analysis.py:1842: UserWarning: Tight layout not applied. The bottom and top margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+============================================================
+SHAPE
+============================================================
+(76497, 15)
+
+============================================================
+COLUMNS
+============================================================
+['route_id', 'route_start_time', 'package_id', 'last_event', 'updated_at', 'consumer_id', 'hub_id', 'city', 'state', 'zip_code', 'instructions', 'market', 'client_id', 'driver_id', 'csat']
+
+============================================================
+DTYPES
+============================================================
+route_id            str
+route_start_time    str
+package_id          str
+last_event          str
+updated_at          str
+consumer_id         str
+hub_id              str
+city                str
+state               str
+zip_code            str
+instructions        str
+market              str
+client_id           str
+driver_id           str
+csat                str
+dtype: object
+
+============================================================
+NULL COUNTS
+============================================================
+route_id                0
+route_start_time        0
+package_id              0
+last_event              0
+updated_at              0
+consumer_id             0
+hub_id                  0
+city                    0
+state                   1
+zip_code                0
+instructions        48421
+market                  0
+client_id               0
+driver_id               0
+csat                    0
+dtype: int64
+
+============================================================
+UNIQUE VALUES -- market  (5 distinct)
+============================================================
+market
+Denver          24443
+Philadelphia    17410
+Baltimore       15053
+Dallas           9803
+Chicago          9788
+
+============================================================
+UNIQUE VALUES -- last_event  (2 distinct)
+============================================================
+last_event
+delivered       76416
+misdelivered       81
+
+============================================================
+CSAT COLUMN CANDIDATES: ['csat']
+============================================================
+
+--- 20 sample values from 'csat' ---
+  '5'
+  '5'
+  '5'
+  '5'
+  '5'
+  '5'
+  '5'
+  '5'
+  '5 !!! Thank you so much!'
+  '5'
+  '5'
+  '5'
+  '5'
+  '5'
+  '5'
+  '5 thanks !!'
+  '5'
+  '5'
+  '5'
+  '5'
+
+============================================================
+CLEANING SUMMARY
+============================================================
+  Total rows          : 76,497
+  Valid CSAT rows     : 76,493
+  Parse rate          : 100.0%
+  Date range          : 2021-03-19 13:42:04.400000+00:00  ->  2021-04-18 20:49:16.700000+00:00
+  Rows with comments  : 4,754
+
+  Sample unparsed values (4 shown):
+    'There is a call box. You will need to dial 0001 for the Leasing Office, who will let you in.'
+    'Hello! Please deliver the package on Fayette Street. There is a call box. You will need to dial 0001 for the Leasing Office, who will let you in.'
+    "My apartment complex staff said your driver was extremely rude and they tried to tell him you can't leave packages here. The drivers license plate number is TX PBG 0005"
+    'Press 003 to get buzzed in'
+
+============================================================
+PHASE 3 -- CSAT DESCRIPTIVE STATS
+============================================================
+  Mean     : 4.8324
+  Median   : 5.0
+  Std Dev  : 0.7068
+  Skewness : -4.5648
+
+  1*   1,820  (2.38%)
+  2*     623  (0.81%)
+  3*     981  (1.28%)
+  4*   1,710  (2.24%)
+  5*  71,359  (93.29%)
+
+  Insight: 93.3% of ratings are 5-star. The gap to 4.9 is driven by 2.4% of 1-star ratings.
+  -> saved figures\01_csat_distribution.png
+  -> saved figures\02_csat_violin.png
+
+===========================================================================
+PHASE 4 -- MARKET SUMMARY TABLE
+===========================================================================
+Market           Count   Mean CSAT   5* Rate   Below-4*   Misdelivery
+---------------------------------------------------------------------------
+Dallas           9,802      4.8623    94.51%      3.68%       0.092%
+Denver          24,443      4.8409    93.81%      4.26%       0.074%
+Chicago          9,787      4.8365    93.68%      4.59%       0.102%
+Baltimore       15,051      4.8193    92.25%      4.68%       0.140%
+Philadelphia    17,410      4.8125    92.54%      4.99%       0.132%
+===========================================================================
+  -> saved figures\03_csat_by_market.png
+  -> saved figures\04_market_multi_metric.png
+  -> saved figures\05_misdelivery_by_market.png
+
+=======================================================
+PHASE 5 -- WEEKLY CSAT TREND
+=======================================================
+    Week    Deliveries   Mean CSAT
+-------------------------------------------------------
+      11         3,108      4.7568 <-- trend start
+      12        18,531      4.8163
+      13        17,829      4.8350
+      14        18,602      4.8506
+      15        18,423      4.8404
+=======================================================
+
+=======================================================
+PHASE 5 -- CRITICAL TIME-OF-DAY FINDING
+=======================================================
+  Daytime  CSAT (09-18h) avg : 4.8720
+  Midnight CSAT (02h, 04h)   : 2.7601
+  Worst single hour          : 05:00  -> CSAT 2.0000  (n=4)
+  CSAT cliff drop            : 2.1119 points
+=======================================================
+  -> saved figures\06_csat_by_week.png
+  -> saved figures\07_csat_market_weekly.png
+  -> saved figures\08_csat_by_dow.png
+  -> saved figures\09_csat_by_hour.png
+
+=================================================================
+PHASE 6 -- DRIVER ANALYSIS SUMMARY
+=================================================================
+  Total unique drivers         : 1,940
+  Qualified (>=10 deliveries)  : 1,415
+  Qualified below 4.5 CSAT     : 72  (5.1% of qualified)
+  Qualified below 4.0 CSAT     : 8  (0.6% of qualified)
+
+  Rank  Driver ID                Market          Deliveries  Mean CSAT  Below-4
+  ---------------------------------------------------------------------------
+  1     GfX39BEx88vmTDh3m        Denver                  10     3.2000    40.0%
+  2     795nQn4ydRHCcnSz2        Philadelphia            31     3.2581    48.4%
+  3     J3a5JjEwkau3QQHiY        Baltimore               15     3.2667    53.3%
+  4     pDFy4ZT6YkaEPTGJG        Dallas                  12     3.5833    41.7%
+  5     DmKZ4xDwwK56FqLep        Baltimore               14     3.7143    35.7%
+  6     YPcj9Mjb7XkTxZpJB        Denver                  27     3.7778    37.0%
+  7     K4gs9gNSHcTDuKTJh        Denver                  36     3.8889    30.6%
+  8     k9hguh7aumtTuwqH7        Chicago                 11     3.9091    27.3%
+  9     ivRBiRxBD6263zXh5        Denver                  10     4.0000    20.0%
+  10    3jYuJonTNRABhmW7K        Baltimore               22     4.0000    27.3%
+=================================================================
+  -> saved figures\10_driver_csat_histogram.png
+  -> saved figures\11_bottom_drivers.png
+  -> saved figures\12_driver_scatter.png
+
+=================================================================
+PHASE 7 -- OPERATIONS INSIGHTS
+=================================================================
+
+  [Duration vs CSAT]
+    CSAT 1*  mean duration: 2.82 hrs  (n=1,719)
+    CSAT 2*  mean duration: 3.05 hrs  (n=610)
+    CSAT 3*  mean duration: 2.78 hrs  (n=954)
+    CSAT 4*  mean duration: 2.69 hrs  (n=1,674)
+    CSAT 5*  mean duration: 2.29 hrs  (n=69,807)
+    -> 1-star routes run 0.53 hrs longer on average than 5-star routes.
+
+  [Instructions Impact]
+    Without Instructions  : CSAT 4.8832  (n=48,420)
+    With Instructions     : CSAT 4.7448  (n=28,073)
+    -> Gap: -0.1384  (without instructions scores higher)
+
+  [Misdelivery Impact]
+    delivered     : CSAT 4.8362  (n=76,412)
+    misdelivered  : CSAT 1.1975  (n=81)
+    -> Misdelivery destroys 3.64 CSAT points.
+
+  [Route Size vs CSAT]
+    1-3      pkgs: CSAT 4.7467  (n=3,897)
+    4-6      pkgs: CSAT 4.8446  (n=26,936)
+    7-9      pkgs: CSAT 4.8343  (n=31,796)
+    10-12    pkgs: CSAT 4.8313  (n=11,961)
+    13+      pkgs: CSAT 4.8108  (n=1,903)
+=================================================================
+  -> saved figures\13_duration_vs_csat.png
+  -> saved figures\14_instructions_impact.png
+  -> saved figures\15_misdelivery_impact.png
+  -> saved figures\16_route_size_vs_csat.png
+
+============================================================
+PHASE 8 -- LOW-CSAT COMMENT CORPUS
+============================================================
+  Low-CSAT rows (rating<=3 with comment): 1,045
+
+  15 sample comments:
+   1. , this package was left at the top of the stairs not in front of my door. Once again, my neighbor had to let m
+   2. Would appreciate a knock or doorbell ring
+   3. Apt 1 is on the right hand side of the house through the gate. Thank you!
+   4. Please ring 3F buzzer and leave package. Thanks!
+   5. the delivery person threw the package over the gate instead of taking it to the office. The packages inside we
+   6. We only received one of the meals instead of 2 in the box
+   7. was not delivered to my back door as requested
+   8. Please change to once per month.   Only us 2 old people here to eat.    Your boxes are amazing.    Gave so muc
+   9. I just had shoulder surgery and would have appreciated if it were dropped at the door instead of in the middle
+  10. . A day late. No worries though.
+  11. did not follow instructions provided for a safe and secure delivery
+  12. But it's after 3 on
+  13. Sorry meant 1 as good
+  14. You lost the delivery for earlier this week. It was rescheduled for yesterday. I got a message late last night
+  15. Definitely 1!
+
+  Theme distribution (1,045 comments):
+    Instructions Not Followed        374  (35.8%)
+    Other                            342  (32.7%)
+    Wrong Address                    164  (15.7%)
+    Late Delivery                     97  (9.3%)
+    Package Condition                 28  (2.7%)
+    Missing/Stolen                    26  (2.5%)
+    Driver Behavior                   14  (1.3%)
+============================================================
+  -> saved figures\17_low_csat_keywords.png
+  -> saved figures\18_comment_themes.png
+  -> saved figures\19_executive_dashboard.png
